@@ -2,7 +2,7 @@ import type { NamePath, RuleObject } from 'ant-design-vue/lib/form/interface';
 import type { VNode, CSSProperties } from 'vue';
 import type { ButtonProps as AntdButtonProps } from '@/components/Button';
 import type { FormItem } from './formItem';
-import type { ColEx, ComponentType } from './';
+import type { ColEx, ComponentType, ComponentProps } from './';
 import type { TableActionType } from '@/components/Table/src/types/table';
 import type { RowProps } from 'ant-design-vue/lib/grid/Row';
 
@@ -41,6 +41,7 @@ export interface FormActionType {
   validateFields: (nameList?: NamePath[]) => Promise<any>;
   validate: <T = Recordable>(nameList?: NamePath[] | false) => Promise<T>;
   scrollToField: (name: NamePath, options?: ScrollOptions) => Promise<void>;
+  resetDefaultField: (name?: NamePath[]) => void;
 }
 
 export type RegisterFn = (formInstance: FormActionType) => void;
@@ -130,7 +131,7 @@ export type RenderOpts = {
   [key: string]: any;
 };
 
-interface BaseFormSchema {
+interface BaseFormSchema<T extends ComponentType = any> {
   // Field name
   field: string;
   // Extra Fields name[]
@@ -140,7 +141,7 @@ interface BaseFormSchema {
   // Variable name bound to v-model Default value
   valueField?: string;
   // Label name
-  label?: string | VNode;
+  label?: string | VNode | ((renderCallbackParams: RenderCallbackParams) => string | VNode);
   // Auxiliary text
   subLabel?: string;
   // Help text on the right side of the text
@@ -161,13 +162,21 @@ interface BaseFormSchema {
         tableAction: TableActionType;
         formActionType: FormActionType;
         formModel: Recordable;
-      }) => Recordable)
-    | object;
+      }) => ComponentProps[T])
+    | ComponentProps[T];
   // Required
   required?: boolean | ((renderCallbackParams: RenderCallbackParams) => boolean);
 
-  suffix?: string | number | ((values: RenderCallbackParams) => string | number);
-
+  suffix?:
+    | string
+    | number
+    | VNode
+    | ((renderCallbackParams: RenderCallbackParams) => string | VNode | number);
+  prefix?:
+    | string
+    | number
+    | VNode
+    | ((renderCallbackParams: RenderCallbackParams) => string | VNode | number);
   // Validation rules
   rules?: Rule[];
   // Check whether the information is added to the label
@@ -187,6 +196,9 @@ interface BaseFormSchema {
 
   // 是否自动处理与时间相关组件的默认值
   isHandleDateDefaultValue?: boolean;
+
+  // 是否使用valueFormat自动处理默认值
+  isHandleDefaultValue?: boolean;
 
   isAdvanced?: boolean;
 
@@ -223,18 +235,24 @@ interface BaseFormSchema {
   dynamicReadonly?: boolean | ((renderCallbackParams: RenderCallbackParams) => boolean);
 
   dynamicRules?: (renderCallbackParams: RenderCallbackParams) => Rule[];
+
+  valueFormat?: (arg: Partial<RenderCallbackParams> & { value: any }) => any;
 }
-export interface ComponentFormSchema extends BaseFormSchema {
+export interface ComponentFormSchema<T extends ComponentType = any> extends BaseFormSchema<T> {
   // render component
-  component: ComponentType;
+  component: T;
 }
 
 export interface SlotFormSchema extends BaseFormSchema {
-  // Custom slot, in from-item
+  // Custom slot, in form-item
   slot: string;
 }
 
-export type FormSchema = ComponentFormSchema | SlotFormSchema;
+type ComponentFormSchemaType<T extends ComponentType = ComponentType> = T extends any
+  ? ComponentFormSchema<T>
+  : never;
+
+export type FormSchema = ComponentFormSchemaType | SlotFormSchema;
 
 export type FormSchemaInner = Partial<ComponentFormSchema> &
   Partial<SlotFormSchema> &

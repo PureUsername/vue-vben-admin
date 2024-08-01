@@ -15,7 +15,12 @@
     "lockScreenPassword": "Lock screen password",
     "lockScreen": "Lock screen",
     "lockScreenBtn": "Locking",
-    "home": "Home"
+    "home": "Home",
+    "upgrade-prompt": {
+      "title": "New version released",
+      "content": "Vben Admin v5.0.0 preview version has been released",
+      "ok-text": "Go to new version"
+    }
   },
   "multipleTab": {
     "reload": "Refresh current",
@@ -72,7 +77,7 @@
     "tabDetail": "Tab Detail",
     "tabsQuickBtn": "Tabs quick button",
     "tabsRedoBtn": "Tabs redo button",
-    "tabsFoldBtn": "Tabs flod button",
+    "tabsFoldBtn": "Tabs fold button",
     "sidebar": "Sidebar",
     "header": "Header",
     "footer": "Footer",

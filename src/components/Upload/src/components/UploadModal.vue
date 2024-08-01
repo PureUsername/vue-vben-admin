@@ -57,7 +57,7 @@
   import { useMessage } from '@/hooks/web/useMessage';
   //   types
   import { FileItem, UploadResultStatus } from '../types/typing';
-  import { basicProps } from '../props';
+  import { handleFnKey, basicProps } from '../props';
   import { createTableColumns, createActionColumn } from './data';
   // utils
   import { checkImgType, getBase64WithFile } from '../helper';
@@ -66,11 +66,12 @@
   import { warn } from '@/utils/log';
   import FileList from './FileList.vue';
   import { useI18n } from '@/hooks/web/useI18n';
+  import { get } from 'lodash-es';
 
   const props = defineProps({
     ...basicProps,
     previewFileList: {
-      type: Array as PropType<string[]>,
+      type: Array as PropType<string[] | any[]>,
       default: () => [],
     },
   });
@@ -118,8 +119,8 @@
     return isUploadingRef.value
       ? t('component.upload.uploading')
       : someError
-      ? t('component.upload.reUploadFailed')
-      : t('component.upload.startUpload');
+        ? t('component.upload.reUploadFailed')
+        : t('component.upload.startUpload');
   });
 
   // 上传前校验
@@ -160,10 +161,13 @@
   }
 
   // 删除
-  function handleRemove(record: FileItem) {
-    const index = fileListRef.value.findIndex((item) => item.uuid === record.uuid);
-    index !== -1 && fileListRef.value.splice(index, 1);
-    emit('delete', record);
+  function handleRemove(obj: Record<handleFnKey, any>) {
+    let { record = {}, uidKey = 'uid' } = obj;
+    const index = fileListRef.value.findIndex((item) => item[uidKey] === record[uidKey]);
+    if (index !== -1) {
+      const removed = fileListRef.value.splice(index, 1);
+      emit('delete', removed[0][uidKey]);
+    }
   }
 
   async function uploadApiByItem(item: FileItem) {
@@ -190,6 +194,14 @@
       const { data } = ret;
       item.status = UploadResultStatus.SUCCESS;
       item.response = data;
+      if (props.resultField) {
+        // 适配预览组件而进行封装
+        item.response = {
+          code: 0,
+          message: 'upload Success!',
+          url: get(ret, props.resultField),
+        };
+      }
       return {
         success: true,
         error: null,
@@ -207,7 +219,7 @@
   // 点击开始上传
   async function handleStartUpload() {
     const { maxNumber } = props;
-    if ((fileListRef.value.length + props.previewFileList?.length ?? 0) > maxNumber) {
+    if (fileListRef.value.length + props.previewFileList.length > maxNumber) {
       return createMessage.warning(t('component.upload.maxNumber', [maxNumber]));
     }
     try {
